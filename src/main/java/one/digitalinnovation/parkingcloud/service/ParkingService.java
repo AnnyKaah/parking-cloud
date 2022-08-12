@@ -1,51 +1,53 @@
 package one.digitalinnovation.parkingcloud.service;
 
-import one.digitalinnovation.parkingcloud.model.Parking;
-import org.springframework.stereotype.Service;
-
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
+
+import one.digitalinnovation.parkingcloud.exception.ParkingNotFoundException;
+import one.digitalinnovation.parkingcloud.model.Parking;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
+import one.digitalinnovation.parkingcloud.repository.ParkingRepository;
+
+
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ParkingService {
 
-    private static Map<String, Parking> parkingMap = new HashMap();
+    private final ParkingRepository parkingRepository;
 
-    static{
-        var id= getUUID();
-        var id1= getUUID();
-        Parking parking = new Parking (id, "SSM-2222", "PI", "GOL", "Preto");
-        Parking parking1 = new Parking (id1, "OSM-5555", "SC", "Ferrari", "Cinza");
-        parkingMap.put(id, parking);
-        parkingMap.put(id1, parking1);
+    public ParkingService(ParkingRepository parkingRepository) {
+        this.parkingRepository = parkingRepository;
     }
 
-    public ParkingService() {
+    @Transactional(readOnly = true)
+    public List<Parking> findAll() {
+        return parkingRepository.findAll();
     }
 
-    public List<Parking> findAll(){
-        return parkingMap.values().stream().collect(Collectors.toList());
-
-    }
-
-    private static String getUUID() {
-
-        return UUID.randomUUID().toString().replace("-","");
-    }
-
+    @Transactional(readOnly = true)
     public Parking findById(String id) {
-        return parkingMap.get(id);
+        return parkingRepository.findById(id).orElseThrow(
+                () -> new ParkingNotFoundException(id));
     }
 
+    @Transactional
     public Parking create(Parking parkingCreate) {
         String uuid = getUUID();
-        parkingCreate.setId(getUUID());
+        parkingCreate.setId(uuid);
         parkingCreate.setEntryDate(LocalDateTime.now());
-        parkingMap.put(uuid, parkingCreate);
+        parkingRepository.save(parkingCreate);
         return parkingCreate;
+    }
+
+    @Transactional
+    public void delete(String id) {
+        findById(id);
+        parkingRepository.deleteById(id);
+    }
+    private static String getUUID() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 }
