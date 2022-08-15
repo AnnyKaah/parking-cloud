@@ -1,17 +1,14 @@
 package one.digitalinnovation.parkingcloud.service;
 
+import one.digitalinnovation.parkingcloud.exception.ParkingNotFoundException;
+import one.digitalinnovation.parkingcloud.model.Parking;
+import one.digitalinnovation.parkingcloud.repository.ParkingRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
-
-import one.digitalinnovation.parkingcloud.exception.ParkingNotFoundException;
-import one.digitalinnovation.parkingcloud.model.Parking;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.stereotype.Service;
-import one.digitalinnovation.parkingcloud.repository.ParkingRepository;
-
-
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ParkingService {
@@ -49,5 +46,24 @@ public class ParkingService {
     }
     private static String getUUID() {
         return UUID.randomUUID().toString().replace("-", "");
+    }
+
+    @Transactional
+    public Parking update(String id, Parking parkingCreate) {
+        Parking parking = findById(id);
+        parking.setColor(parkingCreate.getColor());
+        parking.setState(parkingCreate.getState());
+        parking.setModel(parkingCreate.getModel());
+        parking.setLicense(parkingCreate.getLicense());
+        parkingRepository.save(parking);
+        return parking;
+    }
+
+    @Transactional
+    public Parking checkOut(String id) {
+        Parking parking = findById(id);
+        parking.setExitDate(LocalDateTime.now());
+        parking.setBill(ParkingCheckOut.getBill(parking));
+        return parkingRepository.save(parking);
     }
 }
